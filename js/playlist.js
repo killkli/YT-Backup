@@ -5,7 +5,7 @@ export function getId(url) {
   const regex = /(https:\/\/)?(www\.)?(m.)?youtube\.com.*[?&]list=.*/;
   const result = regex.test(url);
 
-  if(!result) {
+  if (!result) {
     throw 'urlErr';
   }
 
@@ -33,18 +33,18 @@ export function compareItems(backupItems, currentItems) {
   const addedItems = [];
   const removedItems = [];
 
-  for(let i = 0; i < currentItems.length; i++) {
-    if(!backupItems.some(item => item.includes(currentItems[i][0]))) {
+  for (let i = 0; i < currentItems.length; i++) {
+    if (!backupItems.some(item => item.includes(currentItems[i][0]))) {
       addedItems.push(currentItems[i]);
     }
   }
 
-  for(let i = 0; i < backupItems.length; i++) {
-    if(!currentItems.some(item => item.includes(backupItems[i][0]))) {
+  for (let i = 0; i < backupItems.length; i++) {
+    if (!currentItems.some(item => item.includes(backupItems[i][0]))) {
       removedItems.push(backupItems[i]);
     }
   }
-  
+
   return {
     added: addedItems,
     removed: removedItems,
@@ -53,10 +53,10 @@ export function compareItems(backupItems, currentItems) {
 
 export function playlistToCSV(playlist) {
   const blob = new Blob([
-    arrayToCSV(Object.entries(playlist.info)),
-    '\r\n\r\n',
+    // arrayToCSV(Object.entries(playlist.info)),
+    // '\r\n\r\n',
     arrayToCSV(playlist.items)
-  ], {type: 'text/csv;charset=utf-8;'});
+  ], { type: 'text/csv;charset=utf-8;' });
 
   return blob;
 }
@@ -65,7 +65,7 @@ export function csvToPlaylist(csv) {
 
   let arr = csv.split('\r\n');
 
-  for(let i = 0; i < arr.length; i++) {
+  for (let i = 0; i < arr.length; i++) {
     arr[i] = arr[i]
       .split(',')
       .map(v => v.replace(/""/g, '"'))
@@ -83,19 +83,19 @@ async function fetchItems(id) {
 
   const fetchedItems = [];
   const response = await fetch(itemsApi);
-  
-  if(!response.ok) {
-    if(response.status == 404) {
+
+  if (!response.ok) {
+    if (response.status == 404) {
       throw 'notFoundErr';
     } else {
       throw 'fetchErr';
     }
   }
-  
+
   let result = await response.json();
   fetchedItems.push(...result.items);
 
-  while(result.nextPageToken) {
+  while (result.nextPageToken) {
     let resp = await fetch(itemsApi + `&pageToken=${result.nextPageToken}`);
     result = await resp.json();
     fetchedItems.push(...result.items);
@@ -108,7 +108,7 @@ async function fetchInfo(id) {
   const playlistApi = `https://youtube.googleapis.com/youtube/v3/playlists?part=snippet%2CcontentDetails&id=${id}&key=${API_KEY}`;
 
   const response = await fetch(playlistApi);
-  if(!response.ok) throw 'fetchErr';
+  if (!response.ok) throw 'fetchErr';
   const fetchedInfo = await response.json();
 
   return fetchedInfo;
@@ -120,22 +120,22 @@ function saveItems(items, hasDescription) {
   const headers = [
     'Video ID', 'Title', 'Channel', 'Added At', 'Published At', 'Thumbnail URL'
   ];
-  if(hasDescription) headers.push('Description');
+  if (hasDescription) headers.push('Description');
   result.push(headers);
 
-  for(let item of items){
+  for (let item of items) {
     // Skipping private videos, they dont have publishedAt date
-    if(!item.contentDetails.videoPublishedAt) continue;
+    if (!item.contentDetails.videoPublishedAt) continue;
 
     const line = [
-      item.snippet.resourceId.videoId,
+      "https://youtu.be/" + item.snippet.resourceId.videoId,
       item.snippet.title,
       item.snippet.videoOwnerChannelTitle,
-      item.snippet.publishedAt.slice(0,10),
-      item.contentDetails.videoPublishedAt.slice(0,10),
+      item.snippet.publishedAt.slice(0, 10),
+      item.contentDetails.videoPublishedAt.slice(0, 10),
       item.snippet.thumbnails.high?.url,
     ];
-    if(hasDescription) line.push(item.snippet.description);
+    if (hasDescription) line.push(item.snippet.description);
 
     result.push(line);
   }
